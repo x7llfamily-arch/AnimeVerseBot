@@ -953,3 +953,144 @@ def handle_messages(message):
         uploaded_episodes = get_uploaded_episodes_count(code)
 
         caption = (
+            f"🎬 **Nomi:** {anime[1]}\n\n"
+            f"🥷 **Qismi:** {uploaded_episodes}/{anime[3]}\n"
+            f"🌍 **Davlati:** {anime[4]}\n"
+            f"🎞 **Tili:** {anime[5]}\n"
+            f"📅 **Yili:** {anime[6]}\n"
+            f"🎭 **Janri:** {anime[7]}\n\n"
+            f"🔍 **Qidirishlar soni:** {anime[8]}\n\n"
+            f"🍿 {anime[9]}"
+        )
+
+        markup = get_episodes_grid(
+            code,
+            anime[3]
+        )
+
+        bot.send_photo(
+            chat_id=user_id,
+            photo=anime[2],
+            caption=caption,
+            parse_mode="Markdown",
+            reply_markup=markup
+        )
+
+    else:
+
+        bot.send_message(
+            user_id,
+            "❌ Bunday kodli anime topilmadi. "
+            "Qayta urinib ko'ring."
+        )
+
+
+# ----------------- EPIZODNI YUBORISH -----------------
+
+@bot.callback_query_handler(
+    func=lambda call:
+        call.data.startswith("ep_")
+)
+def send_episode_callback(call):
+
+    try:
+
+        _, anime_code, ep_num = (
+            call.data.split("_")
+        )
+
+        conn = get_db()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT video_id
+            FROM episodes
+            WHERE anime_code = %s
+            AND episode_number = %s
+            """,
+            (
+                anime_code,
+                int(ep_num)
+            )
+        )
+
+        row = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        if row:
+
+            bot.send_video(
+                chat_id=call.message.chat.id,
+                video=row[0],
+                caption=f"{ep_num}-qism"
+            )
+
+            bot.answer_callback_query(
+                call.id
+            )
+
+        else:
+
+            bot.answer_callback_query(
+                call.id,
+                "⚠️ Bu qism videosi hali serverga yuklanmagan!",
+                show_alert=True
+            )
+
+    except Exception as e:
+
+        print(
+            "Episode yuborish xatosi:",
+            e
+        )
+
+        bot.answer_callback_query(
+            call.id,
+            "❌ Videoni yuborishda xatolik yuz berdi!",
+            show_alert=True
+        )
+
+
+# ----------------- FLASK -----------------
+
+@app.route("/")
+def home():
+
+    return "Bot is running!"
+
+
+def run():
+
+    port = int(
+        os.environ.get(
+            "PORT",
+            8080
+        )
+    )
+
+    app.run(
+        host="0.0.0.0",
+        port=port
+    )
+
+
+# ----------------- RUN -----------------
+
+if __name__ == "__main__":
+
+    init_db()
+
+    t = Thread(
+        target=run
+    )
+
+    t.start()
+
+    print(
+        "Bot muvaffaqiyatli ishga tushdi..."
+    )
+
+    bot.infinity_polling()
