@@ -8,7 +8,7 @@ from threading import Thread
 
 # ----------------- SOZLAMALAR -----------------
 
-TOKEN = "8806794822:AAE_-A_Jh2nVtdFnR9vUfq5O2FPP3qJZuGQ"
+TOKEN = "8806794822:AAFJg5aH1sg-yF7Np72319mp76dHPmJDVRs"
 KANAL_ID = "@an1verseuz"
 ADMIN_ID = 8370334471
 
