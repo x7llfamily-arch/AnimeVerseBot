@@ -886,6 +886,173 @@ def save_edited_anime(
             f"{e}"
         )
 
+# ----------------- BIR NECHTA EPIZODNI BIRDAN QO'SHISH -----------------
+
+bulk_sessions = {}
+
+
+@bot.message_handler(commands=["addbulk"])
+def admin_add_bulk(message):
+
+    if message.from_user.id != ADMIN_ID:
+        return
+
+    args = message.text.split()
+
+    if len(args) < 2:
+        bot.reply_to(
+            message,
+            "⚠️ Format:\n\n"
+            "/addbulk KOD\n\n"
+            "Masalan:\n"
+            "/addbulk 101\n\n"
+            "Keyin videolarni ketma-ket yuboring."
+        )
+        return
+
+    anime_code = args[1]
+
+    # Anime mavjudligini tekshirish
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT code, title, episodes_count
+        FROM animes
+        WHERE code = %s
+        """,
+        (anime_code,)
+    )
+
+    anime = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    if not anime:
+        bot.reply_to(
+            message,
+            f"❌ {anime_code} kodli anime topilmadi!"
+        )
+        return
+
+    # Bulk rejimini boshlash
+    bulk_sessions[message.from_user.id] = {
+        "anime_code": anime_code,
+        "episode": 1
+    }
+
+    bot.reply_to(
+        message,
+        f"✅ Bulk qo'shish boshlandi!\n\n"
+        f"🎬 Anime: {anime[1]}\n"
+        f"🎞 Jami qism: {anime[2]}\n\n"
+        f"📥 Endi videolarni ketma-ket yuboring.\n"
+        f"1-video → 1-qism\n"
+        f"2-video → 2-qism\n"
+        f"3-video → 3-qism\n\n"
+        f"🛑 Tugatish uchun /stopbulk yozing.\n\n"
+        f"📢 Videolar kanalga yuborilmaydi!"
+    )
+
+
+@bot.message_handler(commands=["stopbulk"])
+def admin_stop_bulk(message):
+
+    if message.from_user.id != ADMIN_ID:
+        return
+
+    if message.from_user.id not in bulk_sessions:
+        bot.reply_to(
+            message,
+            "⚠️ Hozir bulk qo'shish rejimi yoqilmagan."
+        )
+        return
+
+    session = bulk_sessions.pop(message.from_user.id)
+
+    next_episode = session["episode"]
+
+    bot.reply_to(
+        message,
+        f"✅ Bulk qo'shish tugatildi!\n\n"
+        f"📌 Kod: {session['anime_code']}\n"
+        f"🎞 Qo'shilgan qismlar: {next_episode - 1}"
+    )
+
+
+@bot.message_handler(content_types=["video"])
+def admin_bulk_video(message):
+
+    if message.from_user.id != ADMIN_ID:
+        return
+
+    # Bulk rejimi yoqilmagan bo'lsa, hech narsa qilmaydi
+    if message.from_user.id not in bulk_sessions:
+        return
+
+    session = bulk_sessions[message.from_user.id]
+
+    anime_code = session["anime_code"]
+    ep_num = session["episode"]
+
+    video_id = message.video.file_id
+
+    try:
+
+        conn = get_db()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO episodes
+            (
+                anime_code,
+                episode_number,
+                video_id
+            )
+            VALUES (%s, %s, %s)
+
+            ON CONFLICT
+            (
+                anime_code,
+                episode_number
+            )
+
+            DO UPDATE SET
+                video_id = EXCLUDED.video_id
+            """,
+            (
+                anime_code,
+                ep_num,
+                video_id
+            )
+        )
+
+        conn.commit()
+
+        cursor.close()
+        conn.close()
+
+        # Keyingi qism raqami
+        session["episode"] += 1
+
+        bot.reply_to(
+            message,
+            f"✅ {ep_num}-qism saqlandi!\n\n"
+            f"📌 Kod: {anime_code}\n"
+            f"➡️ Keyingi video → {ep_num + 1}-qism\n\n"
+            f"📢 Kanalga yuborilmadi."
+        )
+
+    except Exception as e:
+
+        bot.reply_to(
+            message,
+            f"❌ {ep_num}-qismni saqlashda xatolik:\n\n"
+            f"{e}"
+        )
     
 # ----------------- EPIZODNI O'CHIRISH -----------------
 
