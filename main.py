@@ -300,12 +300,13 @@ def open_anime_after_subscription(
     uploaded_episodes = get_uploaded_episodes_count(anime_code)
 
     caption = (
-        f"🎬 **Nomi:** {anime[1]}\n\n"
-        f"🥷 **Qismi:** {uploaded_episodes}/{anime[3]}\n"
-        f"🎞 **Tili:** {anime[4]}\n"
-        f"📅 **Yili:** {anime[5]}\n"
-        f"🎭 **Janri:** {anime[6]}\n\n"
-        f"🍿 {anime[7]}"
+    f"🎬 **Nomi:** {anime[1]}\n\n"
+    f"🥷 **Qismi:** {uploaded_episodes}/{anime[3]}\n"
+    f"🌍 **Davlati:** {anime[4]}\n"
+    f"🎞 **Tili:** {anime[5]}\n"
+    f"📅 **Yili:** {anime[6]}\n"
+    f"🎭 **Janri:** {anime[7]}\n"
+    f"📚 **Fasli:** {anime[10] or '1'}"
     )
 
     markup = get_episodes_grid(
@@ -841,6 +842,23 @@ def save_edited_anime(
                     )
 
                     return
+            # Fasl raqam bo‘lishi kerak
+if field == "season":
+    try:
+        new_value = int(new_value)
+    except ValueError:
+        bot.reply_to(
+            message,
+            "❌ Fasl raqam bo'lishi kerak! Masalan: 1 yoki 2"
+        )
+        return
+
+    if new_value < 1:
+        bot.reply_to(
+            message,
+            "❌ Fasl 1 yoki undan katta bo'lishi kerak!"
+        )
+        return
 
         # ----------------- BAZANI YANGILASH -----------------
 
