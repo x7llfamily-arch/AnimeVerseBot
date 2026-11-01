@@ -8,9 +8,9 @@ from threading import Thread
 
 # ----------------- SOZLAMALAR -----------------
 
-TOKEN = "8806794822:AAFJg5aH1sg-yF7Np72319mp76dHPmJDVRs"
-KANAL_ID = "@an1verseuz"
-ADMIN_ID = 8370334471
+TOKEN = "9129009190:AAGaLxN2NBPeoNoBMqjDY-UARIwv2vU4Ch4"
+KANAL_ID = "@tensei_verse"
+ADMIN_ID = 8042634468
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
