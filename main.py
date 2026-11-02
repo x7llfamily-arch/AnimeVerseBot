@@ -9,7 +9,11 @@ from threading import Thread
 # ----------------- SOZLAMALAR -----------------
 
 TOKEN = "9129009190:AAGaLxN2NBPeoNoBMqjDY-UARIwv2vU4Ch4"
-KANAL_ID = "@tensei_verse"
+KANAL_ID_1 = "@tensei_verse"
+KANAL_ID_2 = "@ani_romances"
+
+KANALLAR = [KANAL_ID_1, KANAL_ID_2]
+
 ADMIN_ID = 8042634468
 
 bot = telebot.TeleBot(TOKEN)
