@@ -192,15 +192,21 @@ def start_command(message):
 
         markup = types.InlineKeyboardMarkup()
 
-        username_clean = KANAL_ID.replace("@", "")
-
         markup.add(
             types.InlineKeyboardButton(
-                text="An1Verse",
-                url=f"tg://resolve?domain={username_clean}"
+                text="📢 Tensei Verse",
+                url="https://t.me/tensei_verse"
             )
         )
 
+        markup.add(
+            types.InlineKeyboardButton(
+                text="📢 Ani Romances",
+                url="https://t.me/ani_romances"
+            )
+        )
+        
+        
         if anime_code:
             check_data = f"check_subscription_{anime_code}"
         else:
