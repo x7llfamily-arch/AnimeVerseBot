@@ -372,21 +372,17 @@ def admin_add_anime_to_channel(message):
 
     args = message.text.split()
 
-    anime_id = (
-        args[1]
-        if len(args) > 1
-        else "1"
-    )
+    if len(args) < 2:
+        bot.reply_to(message, "⚠️ Format:\n/addanime KOD")
+        return
+
+    anime_id = args[1]
 
     conn = get_db()
     cursor = conn.cursor()
 
     cursor.execute(
-        """
-        SELECT *
-        FROM animes
-        WHERE code = %s
-        """,
+        "SELECT code, title FROM animes WHERE code = %s",
         (anime_id,)
     )
 
@@ -395,57 +391,134 @@ def admin_add_anime_to_channel(message):
     cursor.close()
     conn.close()
 
-    if anime:
+    if not anime:
+        bot.reply_to(message, f"❌ {anime_id} kodli anime topilmadi!")
+        return
 
-        bot_info = bot.get_me()
+    markup = types.InlineKeyboardMarkup()
 
-        # Bazaga yuklangan qismlar sonini olish
+    markup.add(
+        types.InlineKeyboardButton(
+            "📢 Tensei Verse",
+            callback_data=f"publish_ch1_{anime_id}"
+        )
+    )
+
+    markup.add(
+        types.InlineKeyboardButton(
+            "📢 Ani Romances",
+            callback_data=f"publish_ch2_{anime_id}"
+        )
+    )
+
+    bot.reply_to(
+        message,
+        f"🎬 Anime: {anime[1]}\n\nQaysi kanalga joylaymiz?",
+        reply_markup=markup
+    )
+
+
+@bot.callback_query_handler(
+    func=lambda call: call.data.startswith("publish_ch")
+)
+def publish_anime_callback(call):
+
+    if call.from_user.id != ADMIN_ID:
+        return
+
+    try:
+        parts = call.data.split("_")
+        channel_number = parts[2]
+        anime_id = parts[3]
+
+        target_channel = (
+            KANAL_ID_1 if channel_number == "ch1"
+            else KANAL_ID_2
+        )
+
+        conn = get_db()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT * FROM animes WHERE code = %s",
+            (anime_id,)
+        )
+
+        anime = cursor.fetchone()
+
+        if not anime:
+            cursor.close()
+            conn.close()
+            bot.answer_callback_query(
+                call.id,
+                "Anime topilmadi!",
+                show_alert=True
+            )
+            return
+
+        cursor.execute(
+            """
+            UPDATE animes
+            SET channel_id = %s
+            WHERE code = %s
+            """,
+            (target_channel, anime_id)
+        )
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
         uploaded_episodes = get_uploaded_episodes_count(anime_id)
 
         channel_caption = (
-        f"⟢⟢⟢ {anime[1]} ⟢⟢⟢\n"
-        f"╭─ 🎞️ Qism  ─ {uploaded_episodes}/{anime[3]}\n"
-        f"├─ 🇺🇿 Til   ─ {anime[5]}\n"
-        f"├─ 🎭 Janr  ─ {anime[7]}\n"
-        f"╰─ 📢 Kanal ─ @an1verseuz"
+            f"⟢⟢⟢ {anime[1]} ⟢⟢⟢\n"
+            f"╭─ 🎞️ Qism  ─ {uploaded_episodes}/{anime[3]}\n"
+            f"├─ 🇺🇿 Til   ─ {anime[5]}\n"
+            f"├─ 🎭 Janr  ─ {anime[7]}\n"
+            f"╰─ 📢 Kanal ─ @an1verseuz"
         )
 
-        channel_markup = types.InlineKeyboardMarkup()
+        bot_info = bot.get_me()
 
         bot_link = (
-            f"tg://resolve?domain="
-            f"{bot_info.username}"
+            f"tg://resolve?domain={bot_info.username}"
             f"&start=anime{anime_id}"
         )
 
-        btn_go_bot = types.InlineKeyboardButton(
-            text="✨YUKLAB OLISH✨",
-            url=bot_link
-        )
+        markup = types.InlineKeyboardMarkup()
 
-        channel_markup.add(
-            btn_go_bot
+        markup.add(
+            types.InlineKeyboardButton(
+                text="✨ YUKLAB OLISH ✨",
+                url=bot_link
+            )
         )
 
         bot.send_photo(
-            chat_id=KANAL_ID,
+            chat_id=target_channel,
             photo=anime[2],
             caption=channel_caption,
             parse_mode="Markdown",
-            reply_markup=channel_markup
+            reply_markup=markup
         )
 
-        bot.reply_to(
-            message,
-            "✅ Post kanalingizga muvaffaqiyatli yuborildi!"
+        bot.answer_callback_query(
+            call.id,
+            "Post kanalga yuborildi!"
         )
 
-    else:
-
-        bot.reply_to(
-            message,
-            f"❌ Kod {anime_id} bo'yicha anime bazada topilmadi!"
+        bot.send_message(
+            call.message.chat.id,
+            f"✅ Anime {target_channel} kanaliga yuborildi!"
         )
+
+    except Exception as e:
+        bot.send_message(
+            call.message.chat.id,
+            f"❌ Xatolik: {e}"
+    )
+        
 
 # ----------------- ANIMELAR RO'YXATI -----------------
 
