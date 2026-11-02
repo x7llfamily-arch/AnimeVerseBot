@@ -694,7 +694,8 @@ def admin_add_episode(message):
             )
 
             bot.send_photo(
-                chat_id=KANAL_ID,
+                chat_id=anime[10] if len(anime) > 10 
+                and anime[10] else KANAL_ID_1,
                 photo=anime[2],
                 caption=channel_caption,
                 parse_mode="Markdown",
