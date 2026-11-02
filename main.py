@@ -125,13 +125,17 @@ def get_uploaded_episodes_count(anime_code):
 
 def check_sub(user_id):
     try:
-        member = bot.get_chat_member(KANAL_ID, user_id)
+        for kanal in KANALLAR:
+            member = bot.get_chat_member(kanal, user_id)
 
-        return member.status in [
-            "member",
-            "creator",
-            "administrator"
-        ]
+            if member.status not in [
+                "member",
+                "creator",
+                "administrator"
+            ]:
+                return False
+
+        return True
 
     except Exception as e:
         print("Obunani tekshirish xatosi:", e)
