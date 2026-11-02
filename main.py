@@ -66,7 +66,12 @@ def init_db():
         ALTER TABLE animes
         ADD COLUMN IF NOT EXISTS season TEXT DEFAULT '1'
     """)
-
+   
+    cursor.execute("""
+    ALTER TABLE animes
+    ADD COLUMN IF NOT EXISTS channel_id TEXT
+    """)
+    
     conn.commit()
     cursor.close()
     conn.close()
