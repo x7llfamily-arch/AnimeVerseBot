@@ -428,8 +428,8 @@ def publish_anime_callback(call):
 
     try:
         parts = call.data.split("_")
-        channel_number = parts[2]
-        anime_id = parts[3]
+        channel_number = parts[1]
+        anime_id = parts[2]
 
         target_channel = (
             KANAL_ID_1 if channel_number == "ch1"
